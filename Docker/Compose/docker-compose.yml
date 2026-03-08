@@ -43,6 +43,25 @@ services:
     labels:
       - "logging=true"
 
+  frontend:
+    build:
+      context: ../../kanban-ionic
+      dockerfile: Dockerfile
+    container_name: kanban-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - app
+    networks:
+      - kanban-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "logging=true"
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
     container_name: kanban-elasticsearch

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 export type IssueStatus = 'OPEN' | 'IN_PROGRESS' | 'CLOSED';
 
@@ -19,7 +20,7 @@ export interface Issue {
 })
 export class IssueServiceTs {
 
-  private apiUrl = 'http://localhost:8080/api/issues';
+  private apiUrl = `${environment.apiUrl}/api/issues`;
 
   constructor(private http: HttpClient, private auth: AuthService) {}
 
