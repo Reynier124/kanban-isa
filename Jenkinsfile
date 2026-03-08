@@ -41,71 +41,65 @@ pipeline {
         stage('E2E Tests') {
             steps {
                 script {
-                    // Levantar servicios necesarios para los tests
-                    sh '''
-                        cd docker/compose
-                        docker compose up -d --build app frontend postgres
-                        echo "⏳ Esperando que los servicios estén listos..."
-                        sleep 30
-                    '''
+                    def workspaceDir = pwd()
 
-                    // Esperar que el backend responda
-                    sh '''
-                        echo "⏳ Esperando backend en puerto 8080..."
-                        for i in $(seq 1 20); do
-                            if curl -sf http://kanban-app:8080/management/health; then
+                    // Levantar servicios
+                    sh """
+                        cd ${workspaceDir}/docker/compose
+                        docker compose up -d --build app frontend postgres
+                        echo "⏳ Esperando servicios..."
+                        sleep 30
+                    """
+
+                    // Esperar backend
+                    sh """
+                        echo "⏳ Esperando backend..."
+                        for i in \$(seq 1 20); do
+                            if docker exec kanban-app curl -sf http://localhost:8080/management/health 2>/dev/null; then
                                 echo "✅ Backend listo"
                                 break
                             fi
-                            echo "Intento $i/20..."
+                            echo "Intento \$i/20..."
                             sleep 10
                         done
-                    '''
+                    """
 
-                    // Esperar que el frontend responda
-                    sh '''
+                    // Esperar frontend
+                    sh """
                         echo "⏳ Esperando frontend..."
-                        for i in $(seq 1 10); do
-                            if curl -sf http://kanban-frontend:80; then
+                        for i in \$(seq 1 10); do
+                            if docker exec kanban-frontend curl -sf http://localhost:80 2>/dev/null; then
                                 echo "✅ Frontend listo"
                                 break
                             fi
-                            echo "Intento $i/10..."
+                            echo "Intento \$i/10..."
                             sleep 5
                         done
-                    '''
+                    """
 
-                    // Correr Cypress en contenedor oficial dentro de la misma red
-                    sh '''
-                        cd kanban-ionic
+                    // Correr Cypress
+                    sh """
                         docker run --rm \
                             --network kanban-network \
-                            -v $PWD:/e2e \
+                            -v ${workspaceDir}/kanban-ionic:/e2e \
                             -w /e2e \
                             -e CYPRESS_baseUrl=http://kanban-frontend:80 \
                             -e CYPRESS_apiUrl=http://kanban-app:8080 \
                             cypress/included:15.11.0 \
                             --browser electron \
                             --headless
-                    '''
+                    """
                 }
             }
             post {
-                always {
-                    publishHTML(target: [
-                        allowMissing: true,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'kanban-ionic/cypress/screenshots',
-                        reportFiles: '**/*.png',
-                        reportName: 'Cypress Screenshots'
-                    ])
-                }
                 failure {
-                    echo "❌ Tests E2E fallaron. Revisá los screenshots."
+                    echo "❌ Tests E2E fallaron. Revisá los screenshots en kanban-ionic/cypress/screenshots"
                 }
                 cleanup {
-                    sh 'cd docker/compose && docker compose down || true'
+                    script {
+                        def workspaceDir = pwd()
+                        sh "cd ${workspaceDir}/docker/compose && docker compose down || true"
+                    }
                 }
             }
         }
