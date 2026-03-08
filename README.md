@@ -17,7 +17,7 @@ Aplicación Kanban full-stack con backend Spring Boot, frontend Ionic PWA, pipel
 ## Levantar el proyecto con Docker
 
 ```bash
-git clone <url-del-repo>
+git clone https://github.com/Reynier124/kanban-isa
 cd kanban-isa/Docker/compose
 docker compose up -d --build
 ```
