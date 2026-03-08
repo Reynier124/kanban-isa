@@ -45,7 +45,7 @@ pipeline {
 
                     // Levantar servicios
                     sh """
-                        cd ${workspaceDir}/docker/compose
+                        cd ${workspaceDir}/Docker/compose
                         docker compose up -d --build app frontend postgres
                         echo "⏳ Esperando servicios..."
                         sleep 30
