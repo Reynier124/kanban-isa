@@ -1,0 +1,30 @@
+{
+  "annotations": {
+    "changelogDate": "20260307205050"
+  },
+  "applications": ["KanbanApp"],
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "name",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "color",
+      "fieldType": "String"
+    }
+  ],
+  "name": "Label",
+  "relationships": [
+    {
+      "otherEntityName": "issue",
+      "otherEntityRelationshipName": "label",
+      "relationshipName": "issue",
+      "relationshipSide": "right",
+      "relationshipType": "many-to-many"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}

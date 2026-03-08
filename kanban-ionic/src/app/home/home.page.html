@@ -1,0 +1,220 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>📋 Kanban</ion-title>
+    <ion-buttons slot="end" *ngIf="isLoggedIn">
+      <button class="view-btn" [class.active]="activeView === 'kanban'" (click)="activeView = 'kanban'">
+        <ion-icon name="list"></ion-icon>
+      </button>
+      <button class="view-btn" [class.active]="activeView === 'projects'" (click)="activeView = 'projects'">
+        <ion-icon name="folder"></ion-icon>
+      </button>
+      <button class="view-btn logout" (click)="logout()">
+        <ion-icon name="log-out"></ion-icon>
+      </button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+
+  <!-- ═══════════════ LOGIN ═══════════════ -->
+  <div class="login-wrapper" *ngIf="!isLoggedIn">
+    <div class="login-card">
+      <div class="login-logo">📋</div>
+      <h1>Kanban</h1>
+      <p class="login-subtitle">Inicia sesión para continuar</p>
+
+      <div class="form-field">
+        <label>Usuario</label>
+        <input type="text" [(ngModel)]="loginUsername" placeholder="admin" (keyup.enter)="login()" />
+      </div>
+      <div class="form-field">
+        <label>Contraseña</label>
+        <input type="password" [(ngModel)]="loginPassword" placeholder="••••••" (keyup.enter)="login()" />
+      </div>
+
+      <p class="login-error" *ngIf="loginError">{{ loginError }}</p>
+
+      <button class="primary-btn" (click)="login()" [disabled]="isLoggingIn">
+        <ion-spinner name="crescent" *ngIf="isLoggingIn"></ion-spinner>
+        <span *ngIf="!isLoggingIn">Entrar</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ KANBAN VIEW ═══════════════ -->
+  <div class="board-wrapper" *ngIf="isLoggedIn && activeView === 'kanban'">
+    <div class="loading-overlay" *ngIf="isLoading">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+
+    <div class="kanban-board">
+
+      <!-- POR HACER -->
+      <div class="kanban-col">
+        <div class="col-header todo">
+          <span>📋 POR HACER</span>
+          <span class="badge">{{ openIssues.length }}</span>
+        </div>
+        <div class="col-body">
+          <ng-container *ngIf="openIssues.length > 0; else emptyTodo">
+            <div class="issue-card" *ngFor="let issue of openIssues">
+              <div class="issue-top">
+                <span class="issue-title">{{ issue.title }}</span>
+              </div>
+              <p class="issue-desc" *ngIf="issue.description">{{ issue.description }}</p>
+              <p class="issue-project" *ngIf="getProjectName(issue)">📁 {{ getProjectName(issue) }}</p>
+              <div class="issue-actions">
+                <button class="act move" (click)="moveIssue(issue, 'IN_PROGRESS')">▶ Iniciar</button>
+                <button class="act edit" (click)="openEditIssue(issue)">✏️</button>
+                <button class="act del" (click)="confirmDeleteIssue(issue)">🗑️</button>
+              </div>
+            </div>
+          </ng-container>
+          <ng-template #emptyTodo><p class="empty">Sin tareas</p></ng-template>
+        </div>
+      </div>
+
+      <!-- EN PROGRESO -->
+      <div class="kanban-col">
+        <div class="col-header progress">
+          <span>⏳ EN PROGRESO</span>
+          <span class="badge">{{ inProgressIssues.length }}</span>
+        </div>
+        <div class="col-body">
+          <ng-container *ngIf="inProgressIssues.length > 0; else emptyProgress">
+            <div class="issue-card" *ngFor="let issue of inProgressIssues">
+              <div class="issue-top">
+                <span class="issue-title">{{ issue.title }}</span>
+              </div>
+              <p class="issue-desc" *ngIf="issue.description">{{ issue.description }}</p>
+              <p class="issue-project" *ngIf="getProjectName(issue)">📁 {{ getProjectName(issue) }}</p>
+              <div class="issue-actions">
+                <button class="act back" (click)="moveIssue(issue, 'OPEN')">◀</button>
+                <button class="act move" (click)="moveIssue(issue, 'CLOSED')">▶ Terminar</button>
+                <button class="act edit" (click)="openEditIssue(issue)">✏️</button>
+                <button class="act del" (click)="confirmDeleteIssue(issue)">🗑️</button>
+              </div>
+            </div>
+          </ng-container>
+          <ng-template #emptyProgress><p class="empty">Sin tareas</p></ng-template>
+        </div>
+      </div>
+
+      <!-- TERMINADO -->
+      <div class="kanban-col">
+        <div class="col-header done">
+          <span>✅ TERMINADO</span>
+          <span class="badge">{{ closedIssues.length }}</span>
+        </div>
+        <div class="col-body">
+          <ng-container *ngIf="closedIssues.length > 0; else emptyDone">
+            <div class="issue-card done-card" *ngFor="let issue of closedIssues">
+              <div class="issue-top">
+                <span class="issue-title done-title">{{ issue.title }}</span>
+              </div>
+              <p class="issue-desc" *ngIf="issue.description">{{ issue.description }}</p>
+              <div class="issue-actions">
+                <button class="act back" (click)="moveIssue(issue, 'IN_PROGRESS')">◀ Reabrir</button>
+                <button class="act edit" (click)="openEditIssue(issue)">✏️</button>
+                <button class="act del" (click)="confirmDeleteIssue(issue)">🗑️</button>
+              </div>
+            </div>
+          </ng-container>
+          <ng-template #emptyDone><p class="empty">Sin tareas</p></ng-template>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FAB nueva tarea -->
+    <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+      <ion-fab-button (click)="openCreateIssue()">
+        <ion-icon name="add"></ion-icon>
+      </ion-fab-button>
+    </ion-fab>
+  </div>
+
+  <!-- ═══════════════ PROJECTS VIEW ═══════════════ -->
+  <div class="board-wrapper" *ngIf="isLoggedIn && activeView === 'projects'">
+    <div class="projects-header">
+      <h2>Proyectos</h2>
+    </div>
+    <div class="projects-list">
+      <div class="project-card" *ngFor="let project of projects">
+        <div class="project-name">{{ project.name }}</div>
+        <div class="project-desc" *ngIf="project.description">{{ project.description }}</div>
+        <div class="project-actions">
+          <button class="act edit" (click)="openEditProject(project)">✏️ Editar</button>
+          <button class="act del" (click)="confirmDeleteProject(project)">🗑️ Eliminar</button>
+        </div>
+      </div>
+      <div class="empty" *ngIf="projects.length === 0">Sin proyectos</div>
+    </div>
+
+    <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+      <ion-fab-button (click)="openCreateProject()">
+        <ion-icon name="add"></ion-icon>
+      </ion-fab-button>
+    </ion-fab>
+  </div>
+
+  <!-- ═══════════════ MODAL ═══════════════ -->
+  <ion-modal [isOpen]="showModal" (didDismiss)="showModal = false" [initialBreakpoint]="0.75" [breakpoints]="[0, 0.75, 1]">
+    <ng-template>
+      <div class="modal-wrap">
+        <div class="modal-header">
+          <span>{{ isEditing ? 'Editar' : 'Nuevo' }} {{ modalMode === 'issue' ? 'tarea' : 'proyecto' }}</span>
+          <button class="close-btn" (click)="showModal = false">✕</button>
+        </div>
+
+        <!-- ISSUE FORM -->
+        <div class="modal-body" *ngIf="modalMode === 'issue'">
+          <div class="form-field">
+            <label>Título *</label>
+            <input type="text" [(ngModel)]="currentIssue.title" placeholder="Nombre de la tarea" />
+          </div>
+          <div class="form-field">
+            <label>Descripción</label>
+            <textarea [(ngModel)]="currentIssue.description" placeholder="Descripción opcional" rows="3"></textarea>
+          </div>
+          <div class="form-field">
+            <label>Estado</label>
+            <select [(ngModel)]="currentIssue.status">
+              <option value="OPEN">📋 Por Hacer</option>
+              <option value="IN_PROGRESS">⏳ En Progreso</option>
+              <option value="CLOSED">✅ Terminado</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Proyecto</label>
+            <select [(ngModel)]="currentIssue.project">
+              <option [ngValue]="null">Sin proyecto</option>
+              <option *ngFor="let p of projects" [ngValue]="p">{{ p.name }}</option>
+            </select>
+          </div>
+          <button class="primary-btn" (click)="saveIssue()" [disabled]="!currentIssue.title?.trim()">
+            {{ isEditing ? 'Guardar cambios' : 'Crear tarea' }}
+          </button>
+        </div>
+
+        <!-- PROJECT FORM -->
+        <div class="modal-body" *ngIf="modalMode === 'project'">
+          <div class="form-field">
+            <label>Nombre *</label>
+            <input type="text" [(ngModel)]="currentProject.name" placeholder="Nombre del proyecto" />
+          </div>
+          <div class="form-field">
+            <label>Descripción</label>
+            <textarea [(ngModel)]="currentProject.description" placeholder="Descripción opcional" rows="3"></textarea>
+          </div>
+          <button class="primary-btn" (click)="saveProject()" [disabled]="!currentProject.name?.trim()">
+            {{ isEditing ? 'Guardar cambios' : 'Crear proyecto' }}
+          </button>
+        </div>
+
+      </div>
+    </ng-template>
+  </ion-modal>
+
+</ion-content>

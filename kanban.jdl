@@ -1,0 +1,53 @@
+application {
+  config {
+    baseName KanbanApp
+    applicationType monolith
+    packageName com.proyecto.kanban
+    prodDatabaseType postgresql
+    devDatabaseType h2Disk
+    cacheProvider ehcache
+    buildTool maven
+    authenticationType jwt
+    enableTranslation false
+    nativeLanguage en
+    clientFramework angular
+    testFrameworks [cypress]
+  }
+  entities *
+}
+
+entity Project {
+  name String required,
+  description String
+}
+
+entity Issue {
+  title String required,
+  description String,
+  status IssueStatus
+}
+
+entity Label {
+  name String required,
+  color String
+}
+
+enum IssueStatus {
+  OPEN, IN_PROGRESS, CLOSED
+}
+
+relationship OneToMany {
+  Project{issue} to Issue{project(name)}
+}
+
+relationship ManyToMany {
+  Issue{label(name)} to Label{issue}
+}
+
+relationship ManyToOne {
+  Issue{user(login)} to User with builtInEntity
+}
+
+paginate Project, Issue with pagination
+dto * with mapstruct
+service * with serviceClass

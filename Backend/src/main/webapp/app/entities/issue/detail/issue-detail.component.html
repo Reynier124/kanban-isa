@@ -1,0 +1,63 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (issue(); as issueRef) {
+      <div>
+        <h2 data-cy="issueDetailsHeading"><span>Issue</span></h2>
+
+        <hr />
+
+        <jhi-alert-error />
+
+        <jhi-alert />
+
+        <dl class="row-md jh-entity-details">
+          <dt><span>ID</span></dt>
+          <dd>
+            <span>{{ issueRef.id }}</span>
+          </dd>
+          <dt><span>Title</span></dt>
+          <dd>
+            <span>{{ issueRef.title }}</span>
+          </dd>
+          <dt><span>Description</span></dt>
+          <dd>
+            <span>{{ issueRef.description }}</span>
+          </dd>
+          <dt><span>Status</span></dt>
+          <dd>
+            <span>{{ { null: '', OPEN: 'OPEN', IN_PROGRESS: 'IN_PROGRESS', CLOSED: 'CLOSED' }[issueRef.status ?? 'null'] }}</span>
+          </dd>
+          <dt><span>User</span></dt>
+          <dd>
+            <span>{{ issueRef.user?.login }}</span>
+          </dd>
+          <dt><span>Label</span></dt>
+          <dd>
+            @for (label of issueRef.labels; track $index; let last = $last) {
+              <span>
+                <a [routerLink]="['/label', label.id, 'view']">{{ label?.name }}</a
+                >{{ last ? '' : ', ' }}
+              </span>
+            }
+          </dd>
+          <dt><span>Project</span></dt>
+          <dd>
+            @if (issue()!.project) {
+              <div>
+                <a [routerLink]="['/project', issue()!.project?.id, 'view']">{{ issueRef.project?.name }}</a>
+              </div>
+            }
+          </dd>
+        </dl>
+
+        <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+          <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span>Back</span>
+        </button>
+
+        <button type="button" [routerLink]="['/issue', issueRef.id, 'edit']" class="btn btn-primary">
+          <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span>Edit</span>
+        </button>
+      </div>
+    }
+  </div>
+</div>

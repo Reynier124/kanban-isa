@@ -1,0 +1,47 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (label(); as labelRef) {
+      <div>
+        <h2 data-cy="labelDetailsHeading"><span>Label</span></h2>
+
+        <hr />
+
+        <jhi-alert-error />
+
+        <jhi-alert />
+
+        <dl class="row-md jh-entity-details">
+          <dt><span>ID</span></dt>
+          <dd>
+            <span>{{ labelRef.id }}</span>
+          </dd>
+          <dt><span>Name</span></dt>
+          <dd>
+            <span>{{ labelRef.name }}</span>
+          </dd>
+          <dt><span>Color</span></dt>
+          <dd>
+            <span>{{ labelRef.color }}</span>
+          </dd>
+          <dt><span>Issue</span></dt>
+          <dd>
+            @for (issue of labelRef.issues; track $index; let last = $last) {
+              <span>
+                <a [routerLink]="['/issue', issue.id, 'view']">{{ issue?.id }}</a
+                >{{ last ? '' : ', ' }}
+              </span>
+            }
+          </dd>
+        </dl>
+
+        <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+          <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span>Back</span>
+        </button>
+
+        <button type="button" [routerLink]="['/label', labelRef.id, 'edit']" class="btn btn-primary">
+          <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span>Edit</span>
+        </button>
+      </div>
+    }
+  </div>
+</div>

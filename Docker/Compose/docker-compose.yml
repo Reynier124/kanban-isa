@@ -1,0 +1,147 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: kanban-postgres
+    environment:
+      POSTGRES_DB: KanbanApp
+      POSTGRES_USER: KanbanApp
+      POSTGRES_PASSWORD: KanbanApp
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - kanban-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U KanbanApp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ../../Backend
+      dockerfile: Dockerfile
+    container_name: kanban-app
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/KanbanApp
+      SPRING_DATASOURCE_USERNAME: KanbanApp
+      SPRING_DATASOURCE_PASSWORD: KanbanApp
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - kanban-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "logging=true"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: kanban-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - kanban-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: kanban-logstash
+    volumes:
+      - ../elk/logstash/config/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ../elk/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+    ports:
+      - "5044:5044"
+      - "9600:9600"
+    depends_on:
+      - elasticsearch
+    networks:
+      - kanban-network
+    environment:
+      - "LS_JAVA_OPTS=-Xmx256m -Xms256m"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: kanban-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - SERVERNAME=kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - kanban-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.11.0
+    container_name: kanban-filebeat
+    user: root
+    volumes:
+      - ../elk/filebeat/config/filebeat.yml:/tmp/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - logstash
+    networks:
+      - kanban-network
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        cp /tmp/filebeat.yml /usr/share/filebeat/filebeat.yml
+        chmod 644 /usr/share/filebeat/filebeat.yml
+        chown root:root /usr/share/filebeat/filebeat.yml
+        /usr/local/bin/docker-entrypoint -e
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: kanban-jenkins
+    user: root
+    ports:
+      - "8090:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - JAVA_OPTS=-Xmx2048m -Xms512m
+    networks:
+      - kanban-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/login || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  postgres_data:
+  es_data:
+  jenkins_data:
+
+networks:
+  kanban-network:
+    driver: bridge

@@ -1,0 +1,20 @@
+{
+  "generator-jhipster": {
+    "applicationType": "monolith",
+    "authenticationType": "jwt",
+    "baseName": "KanbanApp",
+    "buildTool": "maven",
+    "cacheProvider": "ehcache",
+    "devDatabaseType": "h2Disk",
+    "enableTranslation": false,
+    "entities": ["Project", "Issue", "Label"],
+    "jhipsterVersion": "8.10.0",
+    "jwtSecretKey": "MDc5ZDE1NTZkZjU1Yzc3YmYyOWIxZTczYzlkZjhmYTY2Yjg1YTg4OTljMGFmMTYzZDYxYjlmNGYxNWUxODRkOWIxZjAyOTVlNTFjN2ZhNjA1ZWJjNDAwY2VlNzgxMzc5MTM2MGRhNThjM2IwMDkxZDU5NWJlMGQwZGM5NzIxMTQ=",
+    "lastLiquibaseTimestamp": 1772916650000,
+    "monorepository": true,
+    "nativeLanguage": "en",
+    "packageName": "com.proyecto.kanban",
+    "prodDatabaseType": "postgresql",
+    "skipCommitHook": true
+  }
+}
